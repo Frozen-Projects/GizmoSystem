@@ -140,45 +140,52 @@ void UCustomBoxCollision::PostEditChangeProperty(FPropertyChangedEvent& Property
 
 void FCustomBoxSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const
 {
-
-    // Get the local-to-world transform from the scene proxy.
     const FMatrix LocalToWorldMatrix = GetLocalToWorld();
+    const int32 NumVerts = BoxVertices.Num();
 
-    // Iterate over all scene views.
     for (int32 ViewIndex = 0; ViewIndex < Views.Num(); ViewIndex++)
     {
         if (VisibilityMap & (1 << ViewIndex))
         {
             FPrimitiveDrawInterface* PDI = Collector.GetPDI(ViewIndex);
-            if (BoxVertices.Num() == 8)
+            if (NumVerts % 2 == 0 && NumVerts >= 6)
             {
-                // Transform vertices to world space.
-                const FVector V0 = LocalToWorldMatrix.TransformPosition(BoxVertices[0]);
-                const FVector V1 = LocalToWorldMatrix.TransformPosition(BoxVertices[1]);
-                const FVector V2 = LocalToWorldMatrix.TransformPosition(BoxVertices[2]);
-                const FVector V3 = LocalToWorldMatrix.TransformPosition(BoxVertices[3]);
-                const FVector V4 = LocalToWorldMatrix.TransformPosition(BoxVertices[4]);
-                const FVector V5 = LocalToWorldMatrix.TransformPosition(BoxVertices[5]);
-                const FVector V6 = LocalToWorldMatrix.TransformPosition(BoxVertices[6]);
-                const FVector V7 = LocalToWorldMatrix.TransformPosition(BoxVertices[7]);
+                const int32 CountPerFace = NumVerts / 2;
 
-                // Draw bottom face (vertices 0-1-2-3)
-                PDI->DrawLine(V0, V1, FColor::Green, SDPG_World, 1.0f);
-                PDI->DrawLine(V1, V2, FColor::Green, SDPG_World, 1.0f);
-                PDI->DrawLine(V2, V3, FColor::Green, SDPG_World, 1.0f);
-                PDI->DrawLine(V3, V0, FColor::Green, SDPG_World, 1.0f);
+                // Draw bottom polygon.
+                for (int32 i = 0; i < CountPerFace; i++)
+                {
+                    const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
+                    const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[(i + 1) % CountPerFace]);
+                    PDI->DrawLine(A, B, FColor::Green, SDPG_World, 1.0f);
+                }
 
-                // Draw top face (vertices 4-5-6-7)
-                PDI->DrawLine(V4, V5, FColor::Green, SDPG_World, 1.0f);
-                PDI->DrawLine(V5, V6, FColor::Green, SDPG_World, 1.0f);
-                PDI->DrawLine(V6, V7, FColor::Green, SDPG_World, 1.0f);
-                PDI->DrawLine(V7, V4, FColor::Green, SDPG_World, 1.0f);
+                // Draw top polygon.
+                for (int32 i = CountPerFace; i < NumVerts; i++)
+                {
+                    const int32 j = (i + 1 - CountPerFace) % CountPerFace + CountPerFace;
+                    const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
+                    const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[j]);
+                    PDI->DrawLine(A, B, FColor::Green, SDPG_World, 1.0f);
+                }
 
-                // Draw vertical edges connecting bottom and top.
-                PDI->DrawLine(V0, V4, FColor::Green, SDPG_World, 1.0f);
-                PDI->DrawLine(V1, V5, FColor::Green, SDPG_World, 1.0f);
-                PDI->DrawLine(V2, V6, FColor::Green, SDPG_World, 1.0f);
-                PDI->DrawLine(V3, V7, FColor::Green, SDPG_World, 1.0f);
+                // Draw vertical edges connecting corresponding vertices.
+                for (int32 i = 0; i < CountPerFace; i++)
+                {
+                    const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
+                    const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[i + CountPerFace]);
+                    PDI->DrawLine(A, B, FColor::Green, SDPG_World, 1.0f);
+                }
+            }
+            else
+            {
+                // Fallback: draw a loop connecting all vertices.
+                for (int32 i = 0; i < NumVerts; i++)
+                {
+                    const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
+                    const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[(i + 1) % NumVerts]);
+                    PDI->DrawLine(A, B, FColor::Red, SDPG_World, 1.0f);
+                }
             }
         }
     }
