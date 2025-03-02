@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 
 #include "Components/PrimitiveComponent.h"
-#include "Misc/Crc.h"
 
 #include "CustomBoxCollision.generated.h"
 
@@ -27,6 +26,8 @@ public:
 
     // Calculate the component’s bounds based on the corner vertices.
     virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
+
+    //virtual UBodySetup* GetBodySetup() override;
 
     /** Update the collision geometry using the current corner positions */
     void UpdateCollision();
@@ -52,10 +53,8 @@ public:
 
 protected:
 
-    /** Custom body setup for collision */
-    UPROPERTY()
-    UBodySetup* CustomBodySetup;
     FVector BoxHalfExtents;
+    UBodySetup* CustomBodySetup;
 
 };
 

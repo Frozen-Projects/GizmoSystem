@@ -4,6 +4,8 @@
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/ConvexElem.h"
 
+#include "Misc/Crc.h"
+
 #include "Engine/Engine.h"
 
 // Constructor using FObjectInitializer to create default subobjects.
@@ -124,6 +126,10 @@ void UCustomBoxCollision::PostEditChangeProperty(FPropertyChangedEvent& Property
     Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
+
+// ----------------------------------------------------------------
+// FCustomBoxSceneProxy definitions (for debug visualization)
+// ----------------------------------------------------------------
 
 void FCustomBoxSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const
 {
