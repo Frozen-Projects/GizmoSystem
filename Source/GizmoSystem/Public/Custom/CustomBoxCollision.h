@@ -32,9 +32,6 @@ public:
     /** Update the collision geometry using the current corner positions */
     void UpdateCollision();
 
-    UFUNCTION(BlueprintCallable, Category = "Custom Collision")
-    void SetBoxHalfExtents(const FVector& NewHalfExtents);
-
     /**
     * Array of 8 vertices representing the corners of your box.
     * Order convention:
@@ -43,6 +40,9 @@ public:
     */
     UPROPERTY(EditAnywhere, Category = "Custom Collision")
     TArray<FVector> Corners;
+
+    UFUNCTION(BlueprintCallable, Category = "Custom Collision")
+    bool SetExtents(TArray<FVector> New_Corners);
 
 #if WITH_EDITOR
 
@@ -53,7 +53,7 @@ public:
 
 protected:
 
-    FVector BoxHalfExtents;
+    FVector Default_Extents = FVector(50.f, 50.f, 50.f);
     UBodySetup* CustomBodySetup;
 
 };

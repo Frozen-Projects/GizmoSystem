@@ -12,19 +12,16 @@ UCustomBoxCollision::UCustomBoxCollision(const FObjectInitializer& ObjectInitial
 {
     PrimaryComponentTick.bCanEverTick = false;
 
-    // Set default half extents (50 units in each direction for a 100x100x100 box)
-    BoxHalfExtents = FVector(50.f, 50.f, 50.f);
-
-    // Initialize the eight corners based on BoxHalfExtents.
+    // Initialize the eight corners based on Default_Extents.
     Corners.Empty();
-    Corners.Add(FVector(-BoxHalfExtents.X, -BoxHalfExtents.Y, -BoxHalfExtents.Z));
-    Corners.Add(FVector(BoxHalfExtents.X, -BoxHalfExtents.Y, -BoxHalfExtents.Z));
-    Corners.Add(FVector(BoxHalfExtents.X, BoxHalfExtents.Y, -BoxHalfExtents.Z));
-    Corners.Add(FVector(-BoxHalfExtents.X, BoxHalfExtents.Y, -BoxHalfExtents.Z));
-    Corners.Add(FVector(-BoxHalfExtents.X, -BoxHalfExtents.Y, BoxHalfExtents.Z));
-    Corners.Add(FVector(BoxHalfExtents.X, -BoxHalfExtents.Y, BoxHalfExtents.Z));
-    Corners.Add(FVector(BoxHalfExtents.X, BoxHalfExtents.Y, BoxHalfExtents.Z));
-    Corners.Add(FVector(-BoxHalfExtents.X, BoxHalfExtents.Y, BoxHalfExtents.Z));
+    Corners.Add(FVector(-Default_Extents.X, -Default_Extents.Y, -Default_Extents.Z));
+    Corners.Add(FVector(Default_Extents.X, -Default_Extents.Y, -Default_Extents.Z));
+    Corners.Add(FVector(Default_Extents.X, Default_Extents.Y, -Default_Extents.Z));
+    Corners.Add(FVector(-Default_Extents.X, Default_Extents.Y, -Default_Extents.Z));
+    Corners.Add(FVector(-Default_Extents.X, -Default_Extents.Y, Default_Extents.Z));
+    Corners.Add(FVector(Default_Extents.X, -Default_Extents.Y, Default_Extents.Z));
+    Corners.Add(FVector(Default_Extents.X, Default_Extents.Y, Default_Extents.Z));
+    Corners.Add(FVector(-Default_Extents.X, Default_Extents.Y, Default_Extents.Z));
 }
 
 void UCustomBoxCollision::OnRegister()
@@ -106,28 +103,19 @@ void UCustomBoxCollision::UpdateCollision()
     RecreatePhysicsState();
 }
 
-void UCustomBoxCollision::SetBoxHalfExtents(const FVector& NewHalfExtents)
+bool UCustomBoxCollision::SetExtents(TArray<FVector> New_Corners)
 {
-    BoxHalfExtents = NewHalfExtents;
-
-    // Recalculate the eight corner positions.
-    if (Corners.Num() < 8)
+    if (Corners.Num() < 6 || New_Corners.Num() % 2 != 0)
     {
-        Corners.SetNum(8);
+        return false;
     }
 
-    Corners[0] = FVector(-BoxHalfExtents.X, -BoxHalfExtents.Y, -BoxHalfExtents.Z);
-    Corners[1] = FVector(BoxHalfExtents.X, -BoxHalfExtents.Y, -BoxHalfExtents.Z);
-    Corners[2] = FVector(BoxHalfExtents.X, BoxHalfExtents.Y, -BoxHalfExtents.Z);
-    Corners[3] = FVector(-BoxHalfExtents.X, BoxHalfExtents.Y, -BoxHalfExtents.Z);
-    Corners[4] = FVector(-BoxHalfExtents.X, -BoxHalfExtents.Y, BoxHalfExtents.Z);
-    Corners[5] = FVector(BoxHalfExtents.X, -BoxHalfExtents.Y, BoxHalfExtents.Z);
-    Corners[6] = FVector(BoxHalfExtents.X, BoxHalfExtents.Y, BoxHalfExtents.Z);
-    Corners[7] = FVector(-BoxHalfExtents.X, BoxHalfExtents.Y, BoxHalfExtents.Z);
+    Corners = New_Corners;
 
-    // Update collision and refresh render state.
     UpdateCollision();
     MarkRenderStateDirty();
+
+    return true;
 }
 
 #if WITH_EDITOR
@@ -135,21 +123,9 @@ void UCustomBoxCollision::PostEditChangeProperty(FPropertyChangedEvent& Property
 {
     FName PropertyName = (PropertyChangedEvent.Property) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 
-    if (PropertyName == GET_MEMBER_NAME_CHECKED(UCustomBoxCollision, BoxHalfExtents))
+    // If the Corners array is changed in the editor, update the collision geometry.
+    if (PropertyName == GET_MEMBER_NAME_CHECKED(UCustomBoxCollision, Corners))
     {
-        if (Corners.Num() < 8)
-        {
-            Corners.SetNum(8);
-        }
-        Corners[0] = FVector(-BoxHalfExtents.X, -BoxHalfExtents.Y, -BoxHalfExtents.Z);
-        Corners[1] = FVector(BoxHalfExtents.X, -BoxHalfExtents.Y, -BoxHalfExtents.Z);
-        Corners[2] = FVector(BoxHalfExtents.X, BoxHalfExtents.Y, -BoxHalfExtents.Z);
-        Corners[3] = FVector(-BoxHalfExtents.X, BoxHalfExtents.Y, -BoxHalfExtents.Z);
-        Corners[4] = FVector(-BoxHalfExtents.X, -BoxHalfExtents.Y, BoxHalfExtents.Z);
-        Corners[5] = FVector(BoxHalfExtents.X, -BoxHalfExtents.Y, BoxHalfExtents.Z);
-        Corners[6] = FVector(BoxHalfExtents.X, BoxHalfExtents.Y, BoxHalfExtents.Z);
-        Corners[7] = FVector(-BoxHalfExtents.X, BoxHalfExtents.Y, BoxHalfExtents.Z);
-
         UpdateCollision();
         MarkRenderStateDirty();
     }
