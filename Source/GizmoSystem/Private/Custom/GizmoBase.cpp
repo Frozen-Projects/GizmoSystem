@@ -45,6 +45,7 @@ void AGizmoBase::BeginPlay()
 	if (IsValid(this->PlayerCamera))
 	{
 		EnableInput(this->PlayerController);
+		this->PlayerController->bEnableClickEvents = true;
 	}
 
 	else
