@@ -8,16 +8,14 @@
 
 #include "Engine/Engine.h"
 
-// Constructor using FObjectInitializer to create default subobjects.
-UCustomBoxCollision::UCustomBoxCollision(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
+UCustomBoxCollision::UCustomBoxCollision(const FObjectInitializer& ObjectInitializer): Super(ObjectInitializer), CustomBodySetup(nullptr) // Don't create it here; wait until we have a valid World
 {
     PrimaryComponentTick.bCanEverTick = false;
 
-    // Set a default half extent (e.g., for a 100x100x100 box).
-    BoxHalfExtents = FVector(50.0f, 50.0f, 50.0f);
+    // Set default half extents (50 units in each direction for a 100x100x100 box)
+    BoxHalfExtents = FVector(50.f, 50.f, 50.f);
 
-    // Initialize the corners based on BoxHalfExtents.
+    // Initialize the eight corners based on BoxHalfExtents.
     Corners.Empty();
     Corners.Add(FVector(-BoxHalfExtents.X, -BoxHalfExtents.Y, -BoxHalfExtents.Z));
     Corners.Add(FVector(BoxHalfExtents.X, -BoxHalfExtents.Y, -BoxHalfExtents.Z));
@@ -27,23 +25,36 @@ UCustomBoxCollision::UCustomBoxCollision(const FObjectInitializer& ObjectInitial
     Corners.Add(FVector(BoxHalfExtents.X, -BoxHalfExtents.Y, BoxHalfExtents.Z));
     Corners.Add(FVector(BoxHalfExtents.X, BoxHalfExtents.Y, BoxHalfExtents.Z));
     Corners.Add(FVector(-BoxHalfExtents.X, BoxHalfExtents.Y, BoxHalfExtents.Z));
-
-    // Create the default subobject using the ObjectInitializer.
-    CustomBodySetup = ObjectInitializer.CreateDefaultSubobject<UBodySetup>(this, TEXT("CustomBodySetup"));
-    CustomBodySetup->CollisionTraceFlag = CTF_UseDefault;
 }
 
 void UCustomBoxCollision::OnRegister()
 {
     Super::OnRegister();
 
-    // Fallback: if CustomBodySetup wasn't created in the constructor, create it here.
-    if (!CustomBodySetup)
+    // At this point, GetWorld() should be valid.
+    if (GetWorld())
     {
-        CustomBodySetup = NewObject<UBodySetup>(this, UBodySetup::StaticClass(), TEXT("CustomBodySetup"));
-        CustomBodySetup->CollisionTraceFlag = CTF_UseDefault;
+        // Always create a new UBodySetup with Outer set to GetWorld().
+        CustomBodySetup = NewObject<UBodySetup>(GetWorld(), UBodySetup::StaticClass(), TEXT("CustomBoxCollision_BodySetup"));
+        if (CustomBodySetup)
+        {
+            CustomBodySetup->CollisionTraceFlag = CTF_UseDefault;
+        }
+    }
+    else
+    {
+        // Fallback if GetWorld() isn't valid (should rarely happen).
+        if (!CustomBodySetup)
+        {
+            CustomBodySetup = NewObject<UBodySetup>(this, UBodySetup::StaticClass(), TEXT("CustomBoxCollision_BodySetup"));
+            if (CustomBodySetup)
+            {
+                CustomBodySetup->CollisionTraceFlag = CTF_UseDefault;
+            }
+        }
     }
 
+    // Update collision geometry using the newly created body setup.
     UpdateCollision();
 }
 
@@ -59,7 +70,13 @@ FBoxSphereBounds UCustomBoxCollision::CalcBounds(const FTransform& LocalToWorld)
     {
         Box += Vertex;
     }
+
     return FBoxSphereBounds(Box.TransformBy(LocalToWorld));
+}
+
+UBodySetup* UCustomBoxCollision::GetBodySetup()
+{
+    return CustomBodySetup;
 }
 
 void UCustomBoxCollision::UpdateCollision()
@@ -68,21 +85,37 @@ void UCustomBoxCollision::UpdateCollision()
     {
         return;
     }
-    // Update your collision geometry based on the Corners array.
-    // (Insert collision mesh update logic here.)
+
+    // Clear any previous collision geometry.
+    CustomBodySetup->AggGeom.ConvexElems.Empty();
+
+    // Create a convex element from the current corners.
+    FKConvexElem ConvexElem;
+    ConvexElem.VertexData = Corners;
+    ConvexElem.UpdateElemBox(); // Updates the convex element's bounding box.
+    CustomBodySetup->AggGeom.ConvexElems.Add(ConvexElem);
+
+    // Invalidate any old physics data and rebuild the collision meshes.
+    CustomBodySetup->InvalidatePhysicsData();
+    CustomBodySetup->CreatePhysicsMeshes();
+
+    // Ensure collision is enabled.
+    SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+    // Recreate the physics state so that the updated collision geometry is used.
+    RecreatePhysicsState();
 }
 
 void UCustomBoxCollision::SetBoxHalfExtents(const FVector& NewHalfExtents)
 {
     BoxHalfExtents = NewHalfExtents;
 
-    // Ensure the Corners array has 8 elements.
+    // Recalculate the eight corner positions.
     if (Corners.Num() < 8)
     {
         Corners.SetNum(8);
     }
 
-    // Recalculate the corner positions.
     Corners[0] = FVector(-BoxHalfExtents.X, -BoxHalfExtents.Y, -BoxHalfExtents.Z);
     Corners[1] = FVector(BoxHalfExtents.X, -BoxHalfExtents.Y, -BoxHalfExtents.Z);
     Corners[2] = FVector(BoxHalfExtents.X, BoxHalfExtents.Y, -BoxHalfExtents.Z);
@@ -92,6 +125,7 @@ void UCustomBoxCollision::SetBoxHalfExtents(const FVector& NewHalfExtents)
     Corners[6] = FVector(BoxHalfExtents.X, BoxHalfExtents.Y, BoxHalfExtents.Z);
     Corners[7] = FVector(-BoxHalfExtents.X, BoxHalfExtents.Y, BoxHalfExtents.Z);
 
+    // Update collision and refresh render state.
     UpdateCollision();
     MarkRenderStateDirty();
 }
@@ -99,13 +133,10 @@ void UCustomBoxCollision::SetBoxHalfExtents(const FVector& NewHalfExtents)
 #if WITH_EDITOR
 void UCustomBoxCollision::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
-    FName PropertyName = (PropertyChangedEvent.Property != nullptr)
-        ? PropertyChangedEvent.Property->GetFName()
-        : NAME_None;
+    FName PropertyName = (PropertyChangedEvent.Property) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 
     if (PropertyName == GET_MEMBER_NAME_CHECKED(UCustomBoxCollision, BoxHalfExtents))
     {
-        // Recalculate corners based on the new BoxHalfExtents.
         if (Corners.Num() < 8)
         {
             Corners.SetNum(8);
