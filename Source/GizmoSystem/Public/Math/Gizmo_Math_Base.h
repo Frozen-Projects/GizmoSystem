@@ -8,10 +8,10 @@
 #include "Gizmo_Includes.h"
 #include "Gizmo_Enums.h"
 
-#include "GizmoBase.generated.h"
+#include "Gizmo_Math_Base.generated.h"
 
 UCLASS()
-class GIZMOSYSTEM_API AGizmoBase : public AActor
+class GIZMOSYSTEM_API AGizmoMathBase : public AActor
 {
 	GENERATED_BODY()
 	
@@ -30,7 +30,7 @@ protected:
 public:	
 
 	// Sets default values for this actor's properties.
-	AGizmoBase();
+	AGizmoMathBase();
 
 	// Called every frame.
 	virtual void Tick(float DeltaTime) override;

@@ -1,15 +1,13 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+#include "Math/Gizmo_Math_Rotate.h"
 
-#include "Custom/GizmoRotate.h"
-
-AGizmoRotate::AGizmoRotate()
+AGizmoMathRotate::AGizmoMathRotate()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	this->InitHandles();
 }
 
-void AGizmoRotate::BeginPlay()
+void AGizmoMathRotate::BeginPlay()
 {
 	Super::BeginPlay();
 	
@@ -18,7 +16,7 @@ void AGizmoRotate::BeginPlay()
 		return;
 	}
 
-	AGizmoBase* TempBase = Cast<AGizmoBase>(this->GetParentActor());
+	AGizmoMathBase* TempBase = Cast<AGizmoMathBase>(this->GetParentActor());
 
 	if (!IsValid(TempBase))
 	{
@@ -32,18 +30,18 @@ void AGizmoRotate::BeginPlay()
 	EnableInput(this->PlayerController);
 }
 
-void AGizmoRotate::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void AGizmoMathRotate::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 }
 
-void AGizmoRotate::Tick(float DeltaTime)
+void AGizmoMathRotate::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	this->RotateSystem();
 }
 
-void AGizmoRotate::InitHandles()
+void AGizmoMathRotate::InitHandles()
 {
 	this->Root = CreateDefaultSubobject<USceneComponent>("Root");
 
@@ -74,7 +72,7 @@ void AGizmoRotate::InitHandles()
 	this->Axis_Z->SetCastShadow(false);
 }
 
-void AGizmoRotate::RotateSystem()
+void AGizmoMathRotate::RotateSystem()
 {
 	if (!this->Rotate_Check())
 	{
@@ -99,7 +97,7 @@ void AGizmoRotate::RotateSystem()
 	}
 }
 
-bool AGizmoRotate::Rotate_Check()
+bool AGizmoMathRotate::Rotate_Check()
 {
 	if (!IsValid(GizmoBase))
 	{

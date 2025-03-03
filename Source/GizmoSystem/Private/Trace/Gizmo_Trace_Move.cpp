@@ -1,8 +1,6 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+#include "Trace/Gizmo_Trace_Move.h"
 
-#include "Custom/vGizmo_UE.h"
-
-ACustomGizmo::ACustomGizmo()
+AGizmoTraceMove::AGizmoTraceMove()
 {
     PrimaryActorTick.bCanEverTick = true;
 
@@ -12,30 +10,30 @@ ACustomGizmo::ACustomGizmo()
     XAxis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("XAxis"));
     XAxis->SetupAttachment(Root);
     XAxis->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-    //XAxis->OnClicked.AddDynamic(this, &ACustomGizmo::OnAxisSelected);
+    //XAxis->OnClicked.AddDynamic(this, &AGizmoTraceMove::OnAxisSelected);
 
     YAxis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("YAxis"));
     YAxis->SetupAttachment(Root);
     YAxis->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-    //YAxis->OnClicked.AddDynamic(this, &ACustomGizmo::OnAxisSelected);
+    //YAxis->OnClicked.AddDynamic(this, &AGizmoTraceMove::OnAxisSelected);
 
     ZAxis = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ZAxis"));
     ZAxis->SetupAttachment(Root);
     ZAxis->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-    //ZAxis->OnClicked.AddDynamic(this, &ACustomGizmo::OnAxisSelected);
+    //ZAxis->OnClicked.AddDynamic(this, &AGizmoTraceMove::OnAxisSelected);
 }
 
-void ACustomGizmo::BeginPlay()
+void AGizmoTraceMove::BeginPlay()
 {
     Super::BeginPlay();
 }
 
-void ACustomGizmo::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void AGizmoTraceMove::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
 }
 
-void ACustomGizmo::Tick(float DeltaTime)
+void AGizmoTraceMove::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 }

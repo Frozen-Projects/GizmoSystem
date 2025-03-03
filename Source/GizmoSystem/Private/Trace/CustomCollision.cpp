@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Custom/CustomBoxCollision.h"
+#include "Trace/CustomCollision.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/ConvexElem.h"
 
@@ -8,7 +8,7 @@
 
 #include "Engine/Engine.h"
 
-UCustomBoxCollision::UCustomBoxCollision(const FObjectInitializer& ObjectInitializer): Super(ObjectInitializer), CustomBodySetup(nullptr) // Don't create it here; wait until we have a valid World
+UCustomCollision::UCustomCollision(const FObjectInitializer& ObjectInitializer): Super(ObjectInitializer), CustomBodySetup(nullptr) // Don't create it here; wait until we have a valid World
 {
     PrimaryComponentTick.bCanEverTick = false;
 
@@ -24,7 +24,7 @@ UCustomBoxCollision::UCustomBoxCollision(const FObjectInitializer& ObjectInitial
     Corners.Add(FVector(-Default_Extents.X, Default_Extents.Y, Default_Extents.Z));
 }
 
-void UCustomBoxCollision::OnRegister()
+void UCustomCollision::OnRegister()
 {
     Super::OnRegister();
 
@@ -55,12 +55,12 @@ void UCustomBoxCollision::OnRegister()
     UpdateCollision();
 }
 
-FPrimitiveSceneProxy* UCustomBoxCollision::CreateSceneProxy()
+FPrimitiveSceneProxy* UCustomCollision::CreateSceneProxy()
 {
     return new FCustomBoxSceneProxy(this);
 }
 
-FBoxSphereBounds UCustomBoxCollision::CalcBounds(const FTransform& LocalToWorld) const
+FBoxSphereBounds UCustomCollision::CalcBounds(const FTransform& LocalToWorld) const
 {
     FBox Box(ForceInit);
     for (const FVector& Vertex : Corners)
@@ -71,12 +71,12 @@ FBoxSphereBounds UCustomBoxCollision::CalcBounds(const FTransform& LocalToWorld)
     return FBoxSphereBounds(Box.TransformBy(LocalToWorld));
 }
 
-UBodySetup* UCustomBoxCollision::GetBodySetup()
+UBodySetup* UCustomCollision::GetBodySetup()
 {
     return CustomBodySetup;
 }
 
-void UCustomBoxCollision::UpdateCollision()
+void UCustomCollision::UpdateCollision()
 {
     if (!CustomBodySetup)
     {
@@ -103,7 +103,7 @@ void UCustomBoxCollision::UpdateCollision()
     RecreatePhysicsState();
 }
 
-bool UCustomBoxCollision::SetExtents(TArray<FVector> New_Corners)
+bool UCustomCollision::SetExtents(TArray<FVector> New_Corners)
 {
     if (Corners.Num() < 6 || New_Corners.Num() % 2 != 0)
     {
@@ -119,12 +119,12 @@ bool UCustomBoxCollision::SetExtents(TArray<FVector> New_Corners)
 }
 
 #if WITH_EDITOR
-void UCustomBoxCollision::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+void UCustomCollision::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
     FName PropertyName = (PropertyChangedEvent.Property) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 
     // If the Corners array is changed in the editor, update the collision geometry.
-    if (PropertyName == GET_MEMBER_NAME_CHECKED(UCustomBoxCollision, Corners))
+    if (PropertyName == GET_MEMBER_NAME_CHECKED(UCustomCollision, Corners))
     {
         UpdateCollision();
         MarkRenderStateDirty();

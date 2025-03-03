@@ -10,12 +10,6 @@ public class GizmoSystem : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        // We use this for Open62541 GNUC and CLANG related errors. Beacuse Unreal Engine doesn't use them.
-        UndefinedIdentifierWarningLevel = WarningLevel.Off;
-        bEnableExceptions = true;
-
-        PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "ThirdParty", "vGizmo3D"));
-
         PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
@@ -32,7 +26,6 @@ public class GizmoSystem : ModuleRules
 				"Slate",
 				"SlateCore",
 				"InputCore",
-                "InteractiveToolsFramework",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

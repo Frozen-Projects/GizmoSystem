@@ -1,9 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-#include "Custom/GizmoMove.h"
+#include "Math/Gizmo_Math_Move.h"
 
 // Sets default values.
-AGizmoMove::AGizmoMove()
+AGizmoMathMove::AGizmoMathMove()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -11,7 +9,7 @@ AGizmoMove::AGizmoMove()
 }
 
 // Called when the game starts or when spawned.
-void AGizmoMove::BeginPlay()
+void AGizmoMathMove::BeginPlay()
 {	
 	Super::BeginPlay();
 
@@ -20,7 +18,7 @@ void AGizmoMove::BeginPlay()
 		return;
 	}
 
-	AGizmoBase* TempBase = Cast<AGizmoBase>(this->GetParentActor());
+	AGizmoMathBase* TempBase = Cast<AGizmoMathBase>(this->GetParentActor());
 
 	if (!IsValid(TempBase))
 	{
@@ -35,19 +33,19 @@ void AGizmoMove::BeginPlay()
 	this->BindDelegates();
 }
 
-void AGizmoMove::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void AGizmoMathMove::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 }
 
 // Called every frame.
-void AGizmoMove::Tick(float DeltaTime)
+void AGizmoMathMove::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	this->TransformSystem();
 }
 
-void AGizmoMove::InitHandles()
+void AGizmoMathMove::InitHandles()
 {
 	this->Root = CreateDefaultSubobject<USceneComponent>("Root");
 
@@ -78,7 +76,7 @@ void AGizmoMove::InitHandles()
 	this->Axis_Z->SetCastShadow(false);
 }
 
-void AGizmoMove::TransformSystem()
+void AGizmoMathMove::TransformSystem()
 {
 	if (!this->Transform_Check())
 	{
@@ -105,7 +103,7 @@ void AGizmoMove::TransformSystem()
 	this->Transform_Track();
 }
 
-bool AGizmoMove::Transform_Check()
+bool AGizmoMathMove::Transform_Check()
 {
 	if (!IsValid(GizmoBase))
 	{
@@ -160,7 +158,7 @@ bool AGizmoMove::Transform_Check()
 	return true;
 }
 
-void AGizmoMove::Transform_World()
+void AGizmoMathMove::Transform_World()
 {
 	this->GetRootComponent()->SetWorldRotation(FQuat(0.f), false, nullptr, ETeleportType::None);
 
@@ -206,7 +204,7 @@ void AGizmoMove::Transform_World()
 	}
 }
 
-void AGizmoMove::Transform_Local()
+void AGizmoMathMove::Transform_Local()
 {
 	if (IsValid(this->GizmoBase->PlayerCamera) == false)
 	{
@@ -277,7 +275,7 @@ void AGizmoMove::Transform_Local()
 	this->GizmoBase->GizmoTarget->AddWorldOffset(DeltaLocation, false, nullptr, ETeleportType::None);
 }
 
-void AGizmoMove::Transform_Track()
+void AGizmoMathMove::Transform_Track()
 {
 	USceneComponent* ParentRoot = nullptr;
 
@@ -288,7 +286,7 @@ void AGizmoMove::Transform_Track()
 	}
 }
 
-void AGizmoMove::OnClickedEvent(UPrimitiveComponent* TouchComponent, FKey PressedButton)
+void AGizmoMathMove::OnClickedEvent(UPrimitiveComponent* TouchComponent, FKey PressedButton)
 {
 	if (!IsValid(TouchComponent))
 	{
@@ -318,20 +316,20 @@ void AGizmoMove::OnClickedEvent(UPrimitiveComponent* TouchComponent, FKey Presse
 	}
 }
 
-void AGizmoMove::BindDelegates()
+void AGizmoMathMove::BindDelegates()
 {
 	if (IsValid(this->Axis_X) && IsValid(this->Axis_Y) && IsValid(this->Axis_X))
 	{
 		EnableInput(this->PlayerController);
 		this->PlayerController->bEnableClickEvents = true;
 
-		this->Axis_X->OnClicked.AddDynamic(this, &AGizmoMove::OnClickedEvent);
-		this->Axis_Y->OnClicked.AddDynamic(this, &AGizmoMove::OnClickedEvent);
-		this->Axis_Z->OnClicked.AddDynamic(this, &AGizmoMove::OnClickedEvent);		
+		this->Axis_X->OnClicked.AddDynamic(this, &AGizmoMathMove::OnClickedEvent);
+		this->Axis_Y->OnClicked.AddDynamic(this, &AGizmoMathMove::OnClickedEvent);
+		this->Axis_Z->OnClicked.AddDynamic(this, &AGizmoMathMove::OnClickedEvent);		
 	}
 }
 
-void AGizmoMove::SetArrowMesh(UStaticMesh* In_Mesh)
+void AGizmoMathMove::SetArrowMesh(UStaticMesh* In_Mesh)
 {
 	if (!IsValid(In_Mesh))
 	{

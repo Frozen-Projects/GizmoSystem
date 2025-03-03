@@ -1,10 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-#include "Custom/GizmoBase.h"
-#include "Custom/GizmoMove.h"
+#include "Math/Gizmo_Math_Base.h"
+#include "Math/Gizmo_Math_Move.h"
 
 // Sets default values
-AGizmoBase::AGizmoBase()
+AGizmoMathBase::AGizmoMathBase()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -17,7 +15,7 @@ AGizmoBase::AGizmoBase()
 }
 
 // Called when the game starts or when spawned
-void AGizmoBase::BeginPlay()
+void AGizmoMathBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
@@ -54,13 +52,13 @@ void AGizmoBase::BeginPlay()
 	}
 }
 
-void AGizmoBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void AGizmoMathBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 }
 
 // Called every frame
-void AGizmoBase::Tick(float DeltaTime)
+void AGizmoMathBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -71,16 +69,16 @@ void AGizmoBase::Tick(float DeltaTime)
 		GizmoType->GetChildActor()->GetRootComponent()->SetWorldScale3D(FVector3d(ScaleAxis, ScaleAxis, ScaleAxis));
 	}
 
-	InputComponent->BindAction("AnyKey", IE_Pressed, this, &AGizmoBase::AnyKey_Pressed);
-	InputComponent->BindAction("AnyKey", IE_Released, this, &AGizmoBase::AnyKey_Pressed);
+	InputComponent->BindAction("AnyKey", IE_Pressed, this, &AGizmoMathBase::AnyKey_Pressed);
+	InputComponent->BindAction("AnyKey", IE_Released, this, &AGizmoMathBase::AnyKey_Pressed);
 }
 
-void AGizmoBase::AnyKey_Pressed(FKey Key)
+void AGizmoMathBase::AnyKey_Pressed(FKey Key)
 {
 	this->PressedKeys.Add(Key);
 }
 
-void AGizmoBase::AnyKey_Released(FKey Key)
+void AGizmoMathBase::AnyKey_Released(FKey Key)
 {
 	if (this->PressedKeys.Contains(Key))
 	{
@@ -88,7 +86,7 @@ void AGizmoBase::AnyKey_Released(FKey Key)
 	}
 }
 
-bool AGizmoBase::ForbiddenKeysCallback()
+bool AGizmoMathBase::ForbiddenKeysCallback()
 {
 	bool bForbiddenKeyPressed = false;
 
@@ -104,7 +102,7 @@ bool AGizmoBase::ForbiddenKeysCallback()
 	return bForbiddenKeyPressed;
 }
 
-bool AGizmoBase::DetectMovementCallback()
+bool AGizmoMathBase::DetectMovementCallback()
 {
 	double Delta_X;
 	double Delta_Y;
@@ -121,7 +119,7 @@ bool AGizmoBase::DetectMovementCallback()
 	}
 }
 
-bool AGizmoBase::IsGizmoInViewCallback()
+bool AGizmoMathBase::IsGizmoInViewCallback()
 {
 	if (!IsValid(PlayerCamera) || !IsValid(GizmoTarget) || !((UKismetMathLibrary::Dot_VectorVector(PlayerCamera->GetForwardVector(), UKismetMathLibrary::Normal(GizmoTarget->GetComponentLocation() - PlayerCamera->GetComponentLocation(), 0.0001f))) > 0.5))
 	{

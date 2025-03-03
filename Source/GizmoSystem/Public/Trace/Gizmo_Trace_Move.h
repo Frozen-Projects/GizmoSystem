@@ -8,10 +8,10 @@
 #include "Gizmo_Includes.h"
 #include "Gizmo_Enums.h"
 
-#include "vGizmo_UE.generated.h"
+#include "Gizmo_Trace_Move.generated.h"
 
 UCLASS()
-class GIZMOSYSTEM_API ACustomGizmo : public AActor
+class GIZMOSYSTEM_API AGizmoTraceMove : public AActor
 {
     GENERATED_BODY()
 
@@ -22,7 +22,7 @@ protected:
 
 public:
 
-    ACustomGizmo();
+    AGizmoTraceMove();
     virtual void Tick(float DeltaTime) override;
 
     UPROPERTY(VisibleAnywhere)

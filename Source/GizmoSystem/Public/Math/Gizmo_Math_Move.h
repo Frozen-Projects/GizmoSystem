@@ -5,17 +5,17 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 
-#include "GizmoBase.h"
+#include "Gizmo_Math_Base.h"
 
-#include "GizmoRotate.generated.h"
+#include "Gizmo_Math_Move.generated.h"
 
 UCLASS()
-class GIZMOSYSTEM_API AGizmoRotate : public AActor
+class GIZMOSYSTEM_API AGizmoMathMove : public AActor
 {
 	GENERATED_BODY()
-	
+
 protected:
-	
+
 	// Called when the game starts or when spawned.
 	virtual void BeginPlay() override;
 
@@ -25,16 +25,26 @@ protected:
 	APlayerController* PlayerController = nullptr;
 
 	virtual void InitHandles();
-	virtual void RotateSystem();
-	virtual bool Rotate_Check();
+	virtual void TransformSystem();
+	virtual bool Transform_Check();
+	virtual void Transform_World();
+	virtual void Transform_Local();
+	virtual void Transform_Track();
+	virtual void BindDelegates();
+
+	UFUNCTION()
+	virtual void OnClickedEvent(UPrimitiveComponent* TouchComponent, FKey PressedButton);
 
 public:	
 
 	// Sets default values for this actor's properties.
-	AGizmoRotate();
+	AGizmoMathMove();
 
 	// Called every frame.
 	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION(BlueprintCallable)
+	virtual void SetArrowMesh(UStaticMesh* In_Mesh);
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 	USceneComponent* Root = nullptr;
@@ -49,7 +59,7 @@ public:
 	UStaticMeshComponent* Axis_Z = nullptr;
 
 	UPROPERTY(BlueprintReadOnly)
-	AGizmoBase* GizmoBase = nullptr;
+	AGizmoMathBase* GizmoBase = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UPrimitiveComponent* AxisComponent = nullptr;
@@ -57,11 +67,11 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	ESelectedAxis AxisEnum = ESelectedAxis::Null_Axis;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	bool bRotateLocal = true;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (ExposeOnSpawn = "true"))
+	bool bMoveLocal = true;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	float RotateMultiplier = 5;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (ExposeOnSpawn = "true"))
+	float MoveMultiplier = 5;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta = (ExposeOnSpawn = "true"))
 	bool bEnableDebugMode = false;

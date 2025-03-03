@@ -6,17 +6,17 @@
 
 #include "Components/PrimitiveComponent.h"
 
-#include "CustomBoxCollision.generated.h"
+#include "CustomCollision.generated.h"
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent), ShowCategories = ("Mobility", "Transform", "Collision"))
-class GIZMOSYSTEM_API UCustomBoxCollision : public UPrimitiveComponent
+class GIZMOSYSTEM_API UCustomCollision : public UPrimitiveComponent
 {
     GENERATED_BODY()
 
 public:
 
     // Constructor using FObjectInitializer for proper default subobject creation.
-    UCustomBoxCollision(const FObjectInitializer& ObjectInitializer);
+    UCustomCollision(const FObjectInitializer& ObjectInitializer);
 
     // Override to update collision data once the component is registered.
     virtual void OnRegister() override;
@@ -65,7 +65,7 @@ public:
     
     TArray<FVector> BoxVertices;
 
-    FCustomBoxSceneProxy(const UCustomBoxCollision* InComponent): FPrimitiveSceneProxy(InComponent), BoxVertices(InComponent->Corners) { }
+    FCustomBoxSceneProxy(const UCustomCollision* InComponent): FPrimitiveSceneProxy(InComponent), BoxVertices(InComponent->Corners) { }
 
     virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override;
     virtual FPrimitiveViewRelevance GetViewRelevance(const FSceneView* View) const override;
