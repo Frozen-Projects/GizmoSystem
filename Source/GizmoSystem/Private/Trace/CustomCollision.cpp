@@ -76,6 +76,11 @@ UBodySetup* UCustomCollision::GetBodySetup()
     return CustomBodySetup;
 }
 
+void UCustomCollision::UpdateBodySetup()
+{
+	
+}
+
 void UCustomCollision::UpdateCollision()
 {
     if (!CustomBodySetup)
@@ -85,6 +90,7 @@ void UCustomCollision::UpdateCollision()
 
     // Clear any previous collision geometry.
     CustomBodySetup->AggGeom.ConvexElems.Empty();
+    CustomBodySetup->ClearPhysicsMeshes();
 
     // Create a convex element from the current corners.
     FKConvexElem ConvexElem;
@@ -103,19 +109,9 @@ void UCustomCollision::UpdateCollision()
     RecreatePhysicsState();
 }
 
-bool UCustomCollision::SetExtents(TArray<FVector> New_Corners)
+float UCustomCollision::GetLineThickness() const
 {
-    if (Corners.Num() < 6 || New_Corners.Num() % 2 != 0)
-    {
-        return false;
-    }
-
-    Corners = New_Corners;
-
-    UpdateCollision();
-    MarkRenderStateDirty();
-
-    return true;
+    return this->LineThickness;
 }
 
 #if WITH_EDITOR
@@ -134,6 +130,21 @@ void UCustomCollision::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 }
 #endif
 
+bool UCustomCollision::SetExtents(TArray<FVector> New_Corners)
+{
+    if (Corners.Num() < 6 || New_Corners.Num() % 2 != 0)
+    {
+        return false;
+    }
+
+    Corners = New_Corners;
+
+    UpdateCollision();
+    MarkRenderStateDirty();
+
+    return true;
+}
+
 // ----------------------------------------------------------------
 // FCustomBoxSceneProxy definitions (for debug visualization)
 // ----------------------------------------------------------------
@@ -142,6 +153,16 @@ void FCustomBoxSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*
 {
     const FMatrix LocalToWorldMatrix = GetLocalToWorld();
     const int32 NumVerts = BoxVertices.Num();
+
+    const UCustomCollision* MyCollisionComp = static_cast<const UCustomCollision*>(Component);
+    const float CurrentLineThickness = MyCollisionComp->GetLineThickness();
+    const FColor CurrentShapeColor = MyCollisionComp->ShapeColor; // or use a getter if needed
+
+    // If the thickness is <= 0, do not draw any debug lines.
+    if (CurrentLineThickness <= 0.f)
+    {
+        return;
+    }
 
     for (int32 ViewIndex = 0; ViewIndex < Views.Num(); ViewIndex++)
     {
@@ -157,7 +178,7 @@ void FCustomBoxSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*
                 {
                     const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
                     const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[(i + 1) % CountPerFace]);
-                    PDI->DrawLine(A, B, FColor::Green, SDPG_World, 1.0f);
+                    PDI->DrawLine(A, B, CurrentShapeColor, SDPG_World, CurrentLineThickness);
                 }
 
                 // Draw top polygon.
@@ -166,7 +187,7 @@ void FCustomBoxSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*
                     const int32 j = (i + 1 - CountPerFace) % CountPerFace + CountPerFace;
                     const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
                     const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[j]);
-                    PDI->DrawLine(A, B, FColor::Green, SDPG_World, 1.0f);
+                    PDI->DrawLine(A, B, CurrentShapeColor, SDPG_World, CurrentLineThickness);
                 }
 
                 // Draw vertical edges connecting corresponding vertices.
@@ -174,9 +195,10 @@ void FCustomBoxSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*
                 {
                     const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
                     const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[i + CountPerFace]);
-                    PDI->DrawLine(A, B, FColor::Green, SDPG_World, 1.0f);
+                    PDI->DrawLine(A, B, CurrentShapeColor, SDPG_World, CurrentLineThickness);
                 }
             }
+
             else
             {
                 // Fallback: draw a loop connecting all vertices.
@@ -184,7 +206,7 @@ void FCustomBoxSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*
                 {
                     const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
                     const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[(i + 1) % NumVerts]);
-                    PDI->DrawLine(A, B, FColor::Red, SDPG_World, 1.0f);
+                    PDI->DrawLine(A, B, CurrentShapeColor, SDPG_World, CurrentLineThickness);
                 }
             }
         }
