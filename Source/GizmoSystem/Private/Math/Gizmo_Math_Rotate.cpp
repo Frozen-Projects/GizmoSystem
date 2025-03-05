@@ -27,6 +27,7 @@ void AGizmoMathRotate::BeginPlay()
 
 	UWorld* CurrentWorld = GEngine->GetCurrentPlayWorld();
 	this->PlayerController = UGameplayStatics::GetPlayerController(CurrentWorld, this->GizmoBase->PlayerIndex);
+	PlayerController->bEnableClickEvents = true;
 	EnableInput(this->PlayerController);
 }
 
@@ -86,15 +87,112 @@ void AGizmoMathRotate::RotateSystem()
 		RotateMultiplier = 1;
 	}
 
-	if (bRotateLocal == true)
+	switch (this->AxisEnum)
 	{
+		case ESelectedAxis::Null_Axis:
+		{
+			break;
+		}
+	
+		case ESelectedAxis::X_Axis:
+		{
+			if (this->bRotateLocal)
+			{
+				const double Rotation = this->Rotate_XY() * RotateMultiplier;
+				this->GizmoBase->GizmoTarget->AddWorldRotation(FRotator(Rotation, 0, 0));
+				break;
+			}
 
+			else
+			{
+
+			}
+		}
+		
+		case ESelectedAxis::Y_Axis:
+		{
+			if (this->bRotateLocal)
+			{
+				const double Rotation = this->Rotate_XY() * RotateMultiplier;
+				this->GizmoBase->GizmoTarget->AddWorldRotation(FRotator(0, Rotation, 0));
+				break;
+			}
+
+			else
+			{
+
+			}
+		}
+
+		case ESelectedAxis::Z_Axis:
+		{
+			break;
+		}
+
+		default:
+		{
+			break;
+		}
+	}
+}
+
+FVector AGizmoMathRotate::HorizontalNormal(USceneComponent* Target)
+{
+	const FVector WorldLocation = Target->GetComponentLocation();
+	const FVector CameraLocation = this->GizmoBase->PlayerCamera->GetComponentLocation();
+	const FVector Difference = CameraLocation - WorldLocation;
+
+	return UKismetMathLibrary::Normal(FVector(Difference.X, Difference.Y, 0));
+}
+
+double AGizmoMathRotate::Rotate_XY()
+{
+	USceneComponent* AxisComp = nullptr;
+
+	if (this->AxisEnum == ESelectedAxis::X_Axis)
+	{
+		AxisComp = this->Axis_X;
 	}
 
-	else
+	else if (this->AxisEnum == ESelectedAxis::Y_Axis)
 	{
-
+		AxisComp = this->Axis_Y;
 	}
+
+	if (!IsValid(AxisComp))
+	{
+		return 0;
+	}
+
+	const FVector AxisForward = AxisComp->GetRightVector();
+	const double AxisForward_Z = AxisForward.Z;
+	const FVector Normal_X = this->HorizontalNormal(AxisComp);
+
+	const double DotProduct = UKismetMathLibrary::Dot_VectorVector(AxisForward, Normal_X);
+	const FVector CrossProduct = UKismetMathLibrary::Cross_VectorVector(AxisForward, Normal_X);
+	const double Cross_Z = CrossProduct.Z;
+	
+	double Mouse_Y_Multiplier_True = 0;
+
+	if (this->AxisEnum == ESelectedAxis::X_Axis)
+	{
+		Mouse_Y_Multiplier_True = AxisForward_Z >= 0 ? 5 : -5;
+	}
+
+	else if (this->AxisEnum == ESelectedAxis::Y_Axis)
+	{
+		Mouse_Y_Multiplier_True = AxisForward_Z >= 0 ? -5 : 5;
+	}
+	
+	const double Mouse_X_Multiplier = Cross_Z > 0 ? 5 : -5;
+	const double Mouse_Y_Multiplier = UKismetMathLibrary::Abs(AxisForward_Z) >= 0.75 ? Mouse_Y_Multiplier_True : (DotProduct > 0 ? -5 : 5);
+	const double Mouse_Alpha = UKismetMathLibrary::FClamp(UKismetMathLibrary::Abs(Cross_Z), 0, 1);
+
+	FVector2D MouseDelta = FVector2D((double)0.f);
+	this->PlayerController->GetInputMouseDelta(MouseDelta.X, MouseDelta.Y);
+
+	const double Rotation = UKismetMathLibrary::Lerp(Mouse_Y_Multiplier * MouseDelta.Y, Mouse_X_Multiplier * MouseDelta.X, Mouse_Alpha);
+	return Rotation;
 }
 
 bool AGizmoMathRotate::Rotate_Check()
@@ -109,7 +207,7 @@ bool AGizmoMathRotate::Rotate_Check()
 		return false;
 	}
 
-	if (!IsValid(this->GizmoBase->GizmoTarget))
+	else if (!IsValid(this->GizmoBase->GizmoTarget))
 	{
 		if (bEnableDebugMode)
 		{
@@ -119,7 +217,7 @@ bool AGizmoMathRotate::Rotate_Check()
 		return false;
 	}
 
-	if (!this->GizmoBase->DetectMovementCallback())
+	else if (!this->GizmoBase->DetectMovementCallback())
 	{
 		if (bEnableDebugMode)
 		{
@@ -129,7 +227,7 @@ bool AGizmoMathRotate::Rotate_Check()
 		return false;
 	}
 
-	if (!this->GizmoBase->IsGizmoInViewCallback())
+	else if (!this->GizmoBase->IsGizmoInViewCallback())
 	{
 		if (bEnableDebugMode)
 		{
@@ -139,7 +237,7 @@ bool AGizmoMathRotate::Rotate_Check()
 		return false;
 	}
 
-	if (this->GizmoBase->ForbiddenKeysCallback())
+	else if (this->GizmoBase->ForbiddenKeysCallback())
 	{
 		if (bEnableDebugMode)
 		{
@@ -149,5 +247,28 @@ bool AGizmoMathRotate::Rotate_Check()
 		return false;
 	}
 
+	else if (this->Check_Visibility())
+	{
+		if (bEnableDebugMode)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, "Gizmo Rotate : Gizmo is not visible !");
+		}
+
+		return false;
+	}
+
 	return true;
+}
+
+bool AGizmoMathRotate::Check_Visibility()
+{
+	const FVector CameraFowardVector = this->GizmoBase->PlayerCamera->GetForwardVector();
+	const FVector CameraLocation = this->GizmoBase->PlayerCamera->GetComponentLocation();
+	const FVector TargetLocation = this->GizmoBase->GizmoTarget->GetComponentLocation();
+
+	const FVector Difference = TargetLocation - CameraLocation;
+	const FVector NormalizedVector = UKismetMathLibrary::Normal(Difference, 0.0001);
+	const double DotProduct = UKismetMathLibrary::Dot_VectorVector(CameraFowardVector, NormalizedVector);
+
+	return DotProduct > 0.5 ? true : false;
 }

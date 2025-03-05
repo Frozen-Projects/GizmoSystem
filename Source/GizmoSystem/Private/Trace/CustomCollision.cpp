@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "Trace/CustomCollision.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/ConvexElem.h"
@@ -38,6 +36,7 @@ void UCustomCollision::OnRegister()
             CustomBodySetup->CollisionTraceFlag = CTF_UseDefault;
         }
     }
+
     else
     {
         // Fallback if GetWorld() isn't valid (should rarely happen).
@@ -115,11 +114,19 @@ float UCustomCollision::GetLineThickness() const
 }
 
 #if WITH_EDITOR
+
 void UCustomCollision::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
-    FName PropertyName = (PropertyChangedEvent.Property) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+    const FProperty* Property = PropertyChangedEvent.Property;
+    
+    if (!Property)
+    {
+        Super::PostEditChangeProperty(PropertyChangedEvent);
+        return;
+    }
 
-    // If the Corners array is changed in the editor, update the collision geometry.
+    const FName PropertyName = Property->GetFName().IsNone() ? NAME_None : Property->GetFName();
+
     if (PropertyName == GET_MEMBER_NAME_CHECKED(UCustomCollision, Corners))
     {
         UpdateCollision();
@@ -128,6 +135,7 @@ void UCustomCollision::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 
     Super::PostEditChangeProperty(PropertyChangedEvent);
 }
+
 #endif
 
 bool UCustomCollision::SetExtents(TArray<FVector> New_Corners)

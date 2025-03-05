@@ -25,8 +25,13 @@ protected:
 	APlayerController* PlayerController = nullptr;
 
 	virtual void InitHandles();
-	virtual void RotateSystem();
+
 	virtual bool Rotate_Check();
+	virtual bool Check_Visibility();
+
+	virtual void RotateSystem();
+	virtual FVector HorizontalNormal(USceneComponent* Target);
+	virtual double Rotate_XY();
 
 public:	
 
