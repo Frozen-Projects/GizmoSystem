@@ -73,7 +73,7 @@ void UCustomCollision::UpdateCollision()
     // Create a convex element from the current corners.
     FKConvexElem ConvexElem;
     ConvexElem.VertexData = Corners;
-    ConvexElem.UpdateElemBox(); // Updates the convex element's bounding box.
+    ConvexElem.UpdateElemBox();
     CustomBodySetup->AggGeom.ConvexElems.Add(ConvexElem);
 
     // Invalidate any old physics data and rebuild the collision meshes.
@@ -90,6 +90,30 @@ void UCustomCollision::UpdateCollision()
 float UCustomCollision::GetLineThickness() const
 {
     return this->LineThickness;
+}
+
+TArray<FVector> UCustomCollision::GeneratePyramidVertices(float Height, FVector2D BaseSize)
+{
+    if (Height <= 0 || BaseSize.X <= 0 || BaseSize.Y <= 0)
+    {
+        return TArray<FVector>();
+    }
+
+    TArray<FVector> Vertices;
+
+    const float HalfBaseX = BaseSize.X / 2.f;
+    const float HalfBaseY = BaseSize.Y / 2.f;
+
+    // Base vertices
+    Vertices.Add(FVector(-HalfBaseX, -HalfBaseY, 0.f));
+    Vertices.Add(FVector(HalfBaseX, -HalfBaseY, 0.f));
+    Vertices.Add(FVector(HalfBaseX, HalfBaseY, 0.f));
+    Vertices.Add(FVector(-HalfBaseX, HalfBaseY, 0.f));
+
+    // Apex vertex
+    Vertices.Add(FVector(0.f, 0.f, Height));
+
+    return Vertices;
 }
 
 #if WITH_EDITOR
@@ -119,8 +143,9 @@ void UCustomCollision::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 
 bool UCustomCollision::SetExtents(TArray<FVector> New_Corners)
 {
-    if (Corners.Num() < 6 || New_Corners.Num() % 2 != 0)
+    if (New_Corners.Num() < 4)
     {
+        UE_LOG(LogTemp, Warning, TEXT("You need at least 4 vertices to draw a shape."));
         return false;
     }
 
@@ -150,9 +175,10 @@ void FCustomBoxSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*
     const float CurrentLineThickness = MyCollisionComp->GetLineThickness();
     const FColor CurrentShapeColor = MyCollisionComp->ShapeColor; // or use a getter if needed
 
-    // If the thickness is <= 0, do not draw any debug lines.
-    if (CurrentLineThickness <= 0.f)
+    // You need at least 4 vertices to draw a shape. For example triangle bottom and one point at top.
+    if (CurrentLineThickness <= 0.f || NumVerts < 4)
     {
+        UE_LOG(LogTemp, Warning, TEXT("You need at least 4 vertices and a proper thickness to draw a shape."));
         return;
     }
 
@@ -161,43 +187,16 @@ void FCustomBoxSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*
         if (VisibilityMap & (1 << ViewIndex))
         {
             FPrimitiveDrawInterface* PDI = Collector.GetPDI(ViewIndex);
-            if (NumVerts % 2 == 0 && NumVerts >= 6)
+            
+            // General case: Draw all edges connecting every vertex pair
+            for (int32 i = 0; i < NumVerts; ++i)
             {
-                const int32 CountPerFace = NumVerts / 2;
-
-                // Draw bottom polygon.
-                for (int32 i = 0; i < CountPerFace; i++)
+                for (int32 j = i + 1; j < NumVerts; ++j)
                 {
-                    const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
-                    const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[(i + 1) % CountPerFace]);
-                    PDI->DrawLine(A, B, CurrentShapeColor, SDPG_World, CurrentLineThickness);
-                }
-
-                // Draw top polygon.
-                for (int32 i = CountPerFace; i < NumVerts; i++)
-                {
-                    const int32 j = (i + 1 - CountPerFace) % CountPerFace + CountPerFace;
                     const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
                     const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[j]);
-                    PDI->DrawLine(A, B, CurrentShapeColor, SDPG_World, CurrentLineThickness);
-                }
 
-                // Draw vertical edges connecting corresponding vertices.
-                for (int32 i = 0; i < CountPerFace; i++)
-                {
-                    const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
-                    const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[i + CountPerFace]);
-                    PDI->DrawLine(A, B, CurrentShapeColor, SDPG_World, CurrentLineThickness);
-                }
-            }
-
-            else
-            {
-                // Fallback: draw a loop connecting all vertices.
-                for (int32 i = 0; i < NumVerts; i++)
-                {
-                    const FVector A = LocalToWorldMatrix.TransformPosition(BoxVertices[i]);
-                    const FVector B = LocalToWorldMatrix.TransformPosition(BoxVertices[(i + 1) % NumVerts]);
+					// TODO: You can add more conditions to avoid internal lines but this prevents some lines from being drawn in abstract shapes.
                     PDI->DrawLine(A, B, CurrentShapeColor, SDPG_World, CurrentLineThickness);
                 }
             }

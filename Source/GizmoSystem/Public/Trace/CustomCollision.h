@@ -39,6 +39,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Custom Collision")
     virtual float GetLineThickness() const;
 
+	UFUNCTION(BlueprintCallable, Category = "Custom Collision")
+    virtual TArray<FVector> GeneratePyramidVertices(float Height, FVector2D BaseSize);
+
 protected:
 
     FVector Default_Extents = FVector(50.f, 50.f, 50.f);
