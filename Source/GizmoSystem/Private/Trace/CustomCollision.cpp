@@ -6,11 +6,10 @@
 
 #include "Engine/Engine.h"
 
-UCustomCollision::UCustomCollision(const FObjectInitializer& ObjectInitializer): Super(ObjectInitializer), CustomBodySetup(nullptr) // Don't create it here; wait until we have a valid World
+UCustomCollision::UCustomCollision(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
     PrimaryComponentTick.bCanEverTick = false;
 
-    // Initialize the eight corners based on Default_Extents.
     Corners.Empty();
     Corners.Add(FVector(-Default_Extents.X, -Default_Extents.Y, -Default_Extents.Z));
     Corners.Add(FVector(Default_Extents.X, -Default_Extents.Y, -Default_Extents.Z));
@@ -25,33 +24,6 @@ UCustomCollision::UCustomCollision(const FObjectInitializer& ObjectInitializer):
 void UCustomCollision::OnRegister()
 {
     Super::OnRegister();
-
-    // At this point, GetWorld() should be valid.
-    if (GetWorld())
-    {
-        // Always create a new UBodySetup with Outer set to GetWorld().
-        CustomBodySetup = NewObject<UBodySetup>(GetWorld(), UBodySetup::StaticClass(), TEXT("CustomBoxCollision_BodySetup"));
-        if (CustomBodySetup)
-        {
-            CustomBodySetup->CollisionTraceFlag = CTF_UseDefault;
-        }
-    }
-
-    else
-    {
-        // Fallback if GetWorld() isn't valid (should rarely happen).
-        if (!CustomBodySetup)
-        {
-            CustomBodySetup = NewObject<UBodySetup>(this, UBodySetup::StaticClass(), TEXT("CustomBoxCollision_BodySetup"));
-            if (CustomBodySetup)
-            {
-                CustomBodySetup->CollisionTraceFlag = CTF_UseDefault;
-            }
-        }
-    }
-
-    // Update collision geometry using the newly created body setup.
-    UpdateCollision();
 }
 
 FPrimitiveSceneProxy* UCustomCollision::CreateSceneProxy()
@@ -72,12 +44,19 @@ FBoxSphereBounds UCustomCollision::CalcBounds(const FTransform& LocalToWorld) co
 
 UBodySetup* UCustomCollision::GetBodySetup()
 {
+    if (!CustomBodySetup)
+    {
+        CustomBodySetup = NewObject<UBodySetup>(this, NAME_None, RF_Transient);
+        CustomBodySetup->CollisionTraceFlag = CTF_UseDefault;
+        UpdateCollision();
+    }
+
     return CustomBodySetup;
 }
 
 void UCustomCollision::UpdateBodySetup()
 {
-	
+
 }
 
 void UCustomCollision::UpdateCollision()
@@ -118,7 +97,7 @@ float UCustomCollision::GetLineThickness() const
 void UCustomCollision::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
     const FProperty* Property = PropertyChangedEvent.Property;
-    
+
     if (!Property)
     {
         Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -156,6 +135,11 @@ bool UCustomCollision::SetExtents(TArray<FVector> New_Corners)
 // ----------------------------------------------------------------
 // FCustomBoxSceneProxy definitions (for debug visualization)
 // ----------------------------------------------------------------
+
+FCustomBoxSceneProxy::FCustomBoxSceneProxy(const UCustomCollision* InComponent) : FPrimitiveSceneProxy(InComponent), BoxVertices(InComponent->Corners), Component(InComponent)
+{
+
+}
 
 void FCustomBoxSceneProxy::GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const
 {

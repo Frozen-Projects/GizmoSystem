@@ -15,17 +15,16 @@ class GIZMOSYSTEM_API UCustomCollision : public UShapeComponent
 
 public:
 
-    // Constructor using FObjectInitializer for proper default subobject creation.
     UCustomCollision(const FObjectInitializer& ObjectInitializer);
 
     virtual void OnRegister() override;
-    virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
-    virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
 
+    virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
     virtual UBodySetup* GetBodySetup() override;
     virtual void UpdateBodySetup() override;
     void UpdateCollision();
-    virtual float GetLineThickness() const;
+
+    virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 #if WITH_EDITOR
     virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -37,10 +36,15 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Custom Collision")
     bool SetExtents(TArray<FVector> New_Corners);
 
+    UFUNCTION(BlueprintCallable, Category = "Custom Collision")
+    virtual float GetLineThickness() const;
+
 protected:
 
     FVector Default_Extents = FVector(50.f, 50.f, 50.f);
-    UBodySetup* CustomBodySetup;
+    
+    UPROPERTY(Transient)
+    UBodySetup* CustomBodySetup = nullptr;
 
 };
 
@@ -48,17 +52,11 @@ protected:
 class FCustomBoxSceneProxy : public FPrimitiveSceneProxy
 {
 public:
-    
+
     TArray<FVector> BoxVertices;
     const UCustomCollision* Component;
 
-    FCustomBoxSceneProxy(const UCustomCollision* InComponent)
-        : FPrimitiveSceneProxy(InComponent)
-        , BoxVertices(InComponent->Corners)
-        , Component(InComponent)
-    {
-    }
-
+    FCustomBoxSceneProxy(const UCustomCollision* InComponent);
     virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override;
     virtual FPrimitiveViewRelevance GetViewRelevance(const FSceneView* View) const override;
     virtual SIZE_T GetTypeHash() const override;
